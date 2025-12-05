@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ChidoCar - Selecciona Categoría</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root{
+      --primary:#2563eb;
+      --muted:#9ca3af;
+      --bg:#f7f9fb;
+      --card:#ffffff;
+      --radius:12px;
+      --shadow: 0 8px 30px rgba(37, 99, 235, 0.08);
+      --blue-soft: rgba(37,99,235,0.08);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#0f172a; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale}
+    .wrap{max-width:1100px;margin:30px auto;padding:0 20px;display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start}
+
+    /* HEADER */
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+    header.app-header {
+      background: white; padding: 18px 36px; display:flex; justify-content:space-between; align-items:center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-radius:12px; animation:fadeInDown .6s ease-out;
+    }
+    .logo{ height:56px; cursor:pointer; transition:transform .2s } .logo:hover{ transform:scale(1.03) }
+    nav.top-nav{ display:flex; gap:20px; align-items:center }
+    nav.top-nav a{ color:#666; text-decoration:none; font-weight:600; position:relative }
+    nav.top-nav a::after{ content:''; position:absolute; left:0; bottom:-4px; width:0; height:2px; background:var(--primary); transition:width .2s }
+    nav.top-nav a:hover{ color:var(--primary) } nav.top-nav a:hover::after{ width:100% }
+
+    /* Loader */
+    .loader-overlay{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.85); z-index:9999; backdrop-filter: blur(4px); }
+    .loader-card{ background:var(--card); padding:22px; border-radius:14px; box-shadow:var(--shadow); text-align:center }
+    .spinner{ width:56px; height:56px; border-radius:50%; border:5px solid #e6eefc; border-top-color:var(--primary); animation:spin 1s linear infinite; margin:0 auto 8px }
+    @keyframes spin{ to { transform:rotate(360deg) } }
+    .loader-text{ font-weight:700; color:var(--primary) } .loader-sub{ color:var(--muted); font-size:13px }
+
+    /* Layout */
+    .panel{ background:var(--card); border-radius:var(--radius); padding:22px; box-shadow:var(--shadow) }
+    h1.title{ font-size:24px; margin-bottom:6px }
+    p.lead{ color:var(--muted); margin-bottom:14px }
+
+    .categories{ display:flex; flex-direction:column; gap:12px; margin-top:8px; align-items:stretch }
+
+    .cat{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px; border-radius:12px; border:1px solid rgba(15,23,42,0.04);
+      background:linear-gradient(180deg, transparent, rgba(0,0,0,0.01)); transition:transform .18s, box-shadow .18s; cursor:pointer; overflow:hidden;
+    }
+    .cat:hover{ transform:translateY(-6px); box-shadow:0 14px 30px rgba(16,24,40,0.06) }
+    .cat.selected{ border:2px solid var(--primary); box-shadow:0 14px 36px rgba(37,99,235,0.08); background:linear-gradient(180deg, rgba(37,99,235,0.03), transparent) }
+
+    .cat-left{ display:flex; gap:14px; align-items:center; min-width:0; flex:1 }
+    .radio-custom{ width:18px; height:18px; border-radius:50%; border:2px solid var(--muted); display:flex; align-items:center; justify-content:center; flex-shrink:0; background:white; }
+    .cat.selected .radio-custom{ border-color:var(--primary); background:var(--primary) }
+    .radio-custom i{ color:white; font-size:10px; opacity:0 } .cat.selected .radio-custom i{ opacity:1 }
+
+    .cat-info{ min-width:0 }
+    .cat-name{ font-weight:800; font-size:15px; color:#071124; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .cat-desc{ color:var(--muted); font-size:13px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px }
+
+    .cat-price{ font-weight:900; color:var(--primary); font-size:16px; min-width:84px; text-align:right }
+
+    /* IMÁGENES MÁS GRANDES */
+    .cat-img {
+      height:140px; /* tamaño grande en desktop */
+      width:auto;
+      border-radius:10px;
+      object-fit:contain;
+      flex-shrink:0;
+      display:block;
+      margin-right:6px;
+    }
+
+    .small-note{ color:var(--muted); font-size:13px; margin-top:12px }
+
+    /* Resumen */
+    .summary{ background:linear-gradient(180deg,#fff,#fbfdff); border-radius:var(--radius); padding:18px; border:1px solid rgba(15,23,42,0.03); box-shadow:var(--shadow); position:sticky; top:22px; height:fit-content }
+    .summary h3{ margin-bottom:6px }
+    .summary-row{ display:flex; justify-content:space-between; padding:10px 6px; border-bottom:1px dashed rgba(15,23,42,0.05); align-items:center }
+    .total{ display:flex; justify-content:space-between; padding-top:14px; align-items:center }
+    .total .amount{ color:var(--primary); font-weight:900; font-size:20px }
+
+    .btn{ background:var(--primary); color:white; padding:12px 18px; border-radius:999px; border:none; font-weight:800; cursor:pointer }
+    .btn.secondary{ background:transparent; color:var(--primary); border:1px solid var(--primary) }
+    .btn[disabled]{ opacity:0.5; cursor:not-allowed }
+
+    /* Responsiveness */
+    @media (max-width:1000px){
+      .wrap{ grid-template-columns:1fr; padding:16px; gap:18px }
+      .summary{ position:relative; top:auto }
+      header.app-header{ padding:12px 16px; border-radius:10px }
+      .cat-img{ height:110px } /* reducir un poco en pantallas medianas */
+    }
+
+    /* MÓVIL: tarjetas más estrechas, imagen grande pero ajustada */
+    @media (max-width:520px){
+      .wrap{ padding:12px; gap:12px }
+      .categories{ align-items:center }
+      .cat {
+        max-width:420px; /* ancho más compacto */
+        width:100%;
+        padding:12px;
+        margin:0 auto 12px;
+        border-radius:12px;
+      }
+      .cat-left{ gap:10px }
+      .cat-img{ height:120px; /* grande en móvil pero proporcional */ }
+      .cat-name, .cat-desc{ white-space:normal; overflow:visible; text-overflow:clip }
+      .cat-price{ font-size:15px; min-width:70px }
+      .summary{ padding:14px; }
+    }
+
+    /* MÓVIL MUY PEQUEÑO */
+    @media (max-width:380px){
+      .cat{ max-width:340px }
+      .cat-img{ height:96px }
+    }
+
+    /* accessibility focus visible */
+    .cat:focus{ outline:3px solid rgba(37,99,235,0.12); outline-offset:2px }
+  </style>
+</head>
+<body>
+
+  <!-- Loader -->
+  <div id="loaderOverlay" class="loader-overlay" aria-hidden="false" role="status">
+    <div class="loader-card" aria-hidden="false">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loader-text">Cargando opciones...</div>
+      <div class="loader-sub">Buscando los mejores autos para tus fechas</div>
+    </div>
+  </div>
+
+  <div class="wrap" id="mainContent" style="opacity:0; transform:translateY(8px)">
+
+    <!-- HEADER -->
+    <header class="app-header" style="grid-column:1/-1">
+      <img src="logo.png" alt="ChidoCar" class="logo" onclick="window.location.href='index.html'">
+      <nav class="top-nav">
+        <a href="index.html">Inicio</a>
+        <a href="index.html#nosotros">Sobre Nosotros</a>
+      </nav>
+    </header>
+
+    <!-- LEFT: categorías -->
+    <div class="panel">
+      <h1 class="title">Selecciona la categoría</h1>
+      <p class="lead">Revisa tu información y selecciona una categoría (obligatorio).</p>
+
+      <div class="categories" id="categoriesList" aria-live="polite">
+        <!-- Inserción vía JS -->
+      </div>
+
+      <div class="small-note">Los precios mostrados son por día y pueden variar según disponibilidad.</div>
+
+      <div style="margin-top:14px">
+        <button id="nextBtn" class="btn" disabled>Siguiente</button>
+        <button id="backBtn" class="btn secondary">Regresar</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: resumen -->
+    <aside class="summary" aria-labelledby="resumenTitle">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <h3 id="resumenTitle">Resumen</h3>
+      </div>
+      <div class="summary-row"><div class="muted">Lugar</div><div id="rsLocation">—</div></div>
+      <div class="summary-row"><div class="muted">Fecha salida</div><div id="rsDate">—</div></div>
+      <div class="summary-row"><div class="muted">Hora salida</div><div id="rsTime">—</div></div>
+      <div class="summary-row"><div class="muted">Fecha regreso</div><div id="rsReturn">—</div></div>
+      <div class="summary-row"><div class="muted">Hora devolución</div><div id="rsReturnTime">—</div></div>
+      <div class="summary-row"><div class="muted">Días</div><div id="rsDays">—</div></div>
+      <div class="summary-row"><div class="muted">Categoría</div><div id="rsCategory">—</div></div>
+      <div class="summary-row"><div class="muted">Precio (por día)</div><div id="rsPrice">$0</div></div>
+
+      <div class="total"><strong>Total:</strong><div class="amount" id="rsTotal">$0</div></div>
+    </aside>
+  </div>
+
+  <script>
+    const categories = [
+      { id: 'auto_pequeno_manual', name: 'Auto pequeño manual', desc: 'Nissan March, Renault kwid, Fiat mobi o similar', price: 490, img: 'categoria1.png' },
+      { id: 'sedan_intermedio_automatico', name: 'Sedan Intermedio automático', desc: 'Kia Rio, Mirage, Aveo o similar', price: 590, img: 'categoria2.png' },
+      { id: 'sedan_plus_automatico', name: 'Sedan plus automático', desc: 'Kia K3, Nissan Versa o similar', price: 690, img: 'categoria3.png' },
+      { id: 'suv', name: 'SUV', desc: 'Chevrolet Groove, Duster o similar', price: 890, img: 'categoria4.png' },
+      { id: 'minivan_7_pasajeros', name: 'Minivan 7 pasajeros', desc: 'Avanza, Ertiga, Xpander o similar', price: 890, img: 'categoria5.png' },
+      { id: 'van_8_pasajeros', name: 'Van 8 pasajeros', desc: 'Sienna, Sedona, Odyssey o similar', price: 990, img: 'categoria6.png' }
+    ];
+
+    const loader = document.getElementById('loaderOverlay');
+    const mainContent = document.getElementById('mainContent');
+    const categoriesList = document.getElementById('categoriesList');
+    const rsLocation = document.getElementById('rsLocation');
+    const rsDate = document.getElementById('rsDate');
+    const rsTime = document.getElementById('rsTime');
+    const rsReturn = document.getElementById('rsReturn');
+    const rsReturnTime = document.getElementById('rsReturnTime');
+    const rsDays = document.getElementById('rsDays');
+    const rsCategory = document.getElementById('rsCategory');
+    const rsPrice = document.getElementById('rsPrice');
+    const rsTotal = document.getElementById('rsTotal');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
+
+    function getRentaData(){
+      let data = null;
+      try { const raw = localStorage.getItem('chidocar_renta'); if (raw) data = JSON.parse(raw); }
+      catch(e){ console.warn('Error parseando localStorage', e) }
+      if (!data) {
+        const params = new URLSearchParams(location.search);
+        if (params.toString()){
+          data = { location: params.get('location')||'', date: params.get('date')||'', returnDate: params.get('returnDate')||'', time: params.get('time')||'', returnTime: params.get('returnTime')||'' };
+        }
+      }
+      return data || { location:'Aeropuerto Internacional de Mérida', date:'', returnDate:'', time:'', returnTime:'', selectedCategory:'', selectedPrice:0, days:1, total:0 };
+    }
+    let renta = getRentaData();
+
+    function formatTimeTo12(hm){ if(!hm) return '—'; const p=hm.split(':'); if(p.length<2) return hm; let h=parseInt(p[0],10), m=p[1].padStart(2,'0'); const ampm=h>=12?'PM':'AM'; h=h%12; if(h===0) h=12; return `${String(h).padStart(2,'0')}:${m} ${ampm}`; }
+
+    function calculateDays(start, end){
+      if(!start||!end) return 1;
+      const s = new Date(start + 'T00:00:00'); const e = new Date(end + 'T00:00:00');
+      const ms = 24*60*60*1000; const diff = Math.ceil((e - s)/ms); return diff <= 0 ? 1 : diff;
+    }
+
+    function displayRenta(){
+      rsLocation.textContent = renta.location || '—';
+      rsDate.textContent = renta.date || '—';
+      rsTime.textContent = formatTimeTo12(renta.time || '');
+      rsReturn.textContent = renta.returnDate || '—';
+      rsReturnTime.textContent = formatTimeTo12(renta.returnTime || '');
+      rsCategory.textContent = renta.selectedCategory || '—';
+      rsPrice.textContent = renta.selectedPrice ? `$${renta.selectedPrice}` : '$0';
+      updateTotalsOnSummary();
+    }
+
+    function renderCategories(){
+      categoriesList.innerHTML = '';
+      categories.forEach(cat=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'cat';
+        wrap.tabIndex = 0;
+        wrap.dataset.id = cat.id;
+        wrap.dataset.price = cat.price;
+
+        wrap.innerHTML = `
+          <div class="cat-left">
+            <div class="radio-custom" aria-hidden="true"><i class="fas fa-check"></i></div>
+            <img class="cat-img" src="${cat.img}" alt="${cat.name}">
+            <div class="cat-info">
+              <div class="cat-name">${cat.name}</div>
+              <div class="cat-desc">${cat.desc}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <div class="cat-price">$${cat.price}</div>
+            <div class="muted" style="font-size:12px">por día</div>
+          </div>
+        `;
+        wrap.addEventListener('click', ()=> selectCategory(cat.id));
+        wrap.addEventListener('keydown', (e)=> { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); selectCategory(cat.id); }});
+        categoriesList.appendChild(wrap);
+      });
+    }
+
+    renderCategories();
+
+    let selectedId = null;
+    function selectCategory(id){
+      if(selectedId === id) return;
+      selectedId = id;
+      document.querySelectorAll('.cat').forEach(el=> el.dataset.id===id ? el.classList.add('selected') : el.classList.remove('selected'));
+      const chosen = categories.find(c=>c.id===id); if(!chosen) return;
+      renta.selectedCategory = chosen.name; renta.selectedPrice = chosen.price;
+      rsCategory.textContent = chosen.name; rsPrice.textContent = `$${chosen.price}`;
+      updateTotalsOnSummary();
+      nextBtn.disabled = false;
+      try {
+        const cur = JSON.parse(localStorage.getItem('chidocar_renta')||'{}');
+        const merged = Object.assign({}, cur, { selectedCategory: chosen.name, selectedPrice: chosen.price });
+        localStorage.setItem('chidocar_renta', JSON.stringify(merged));
+      } catch(e){ console.warn('guardar', e) }
+    }
+
+    function updateTotalsOnSummary(){
+      const days = calculateDays(renta.date, renta.returnDate);
+      rsDays.textContent = `${days} ${days===1?'día':'días'}`;
+      const perDay = renta.selectedPrice ? Number(renta.selectedPrice) : 0;
+      rsPrice.textContent = `$${perDay}`;
+      const total = perDay * days;
+      rsTotal.textContent = `$${total}`;
+      renta.days = days; renta.total = total;
+      try {
+        const cur = JSON.parse(localStorage.getItem('chidocar_renta')||'{}');
+        const merged = Object.assign({}, cur, { days, total });
+        localStorage.setItem('chidocar_renta', JSON.stringify(merged));
+      } catch(e){}
+    }
+
+    nextBtn.addEventListener('click', ()=>{
+      if(!selectedId) return;
+      try {
+        const cur = JSON.parse(localStorage.getItem('chidocar_renta')||'{}');
+        const chosen = categories.find(c=>c.id===selectedId);
+        const merged = Object.assign({}, cur, { selectedCategory: chosen.name, selectedPrice: chosen.price, days: renta.days, total: renta.total, savedAt: new Date().toISOString() });
+        localStorage.setItem('chidocar_renta', JSON.stringify(merged));
+      } catch(e){ console.warn(e) }
+      nextBtn.textContent = 'Cargando...'; nextBtn.disabled = true;
+      setTimeout(()=> window.location.href = 'confirmacion.html', 600);
+    });
+
+    backBtn.addEventListener('click', ()=> history.back());
+
+    function init(){
+      displayRenta();
+      try {
+        const raw = localStorage.getItem('chidocar_renta');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.selectedCategory) {
+            const cat = categories.find(c=> c.name===parsed.selectedCategory || c.id===parsed.selectedCategory);
+            if(cat) setTimeout(()=> selectCategory(cat.id), 120);
+          } else updateTotalsOnSummary();
+        } else updateTotalsOnSummary();
+      } catch(e){ updateTotalsOnSummary() }
+      mainContent.style.opacity = '1'; mainContent.style.transform = 'none';
+    }
+
+    (function showLoaderThenInit(){
+      loader.style.opacity = '1'; loader.style.pointerEvents = 'auto';
+      const ms = 500 + Math.round(Math.random()*700);
+      setTimeout(()=> { loader.style.opacity='0'; loader.style.pointerEvents='none'; setTimeout(()=> loader.style.display='none', 320); init(); }, ms);
+    })();
+
+    window.addEventListener('storage', (e)=> {
+      if (e.key === 'chidocar_renta') {
+        try { const parsed = JSON.parse(e.newValue || '{}'); renta = Object.assign({}, renta, parsed); displayRenta(); } catch(err){}
+      }
+    });
+
+    let lastLS = localStorage.getItem('chidocar_renta');
+    setInterval(()=> {
+      const now = localStorage.getItem('chidocar_renta');
+      if (now !== lastLS) { lastLS = now; try { const parsed = JSON.parse(now||'{}'); renta = Object.assign({}, renta, parsed); displayRenta(); } catch(e){} }
+    }, 900);
+
+    document.addEventListener('keydown', (e)=> { if(e.key==='Tab') document.body.classList.add('show-focus'); });
+  </script>
+</body>
+</html>
